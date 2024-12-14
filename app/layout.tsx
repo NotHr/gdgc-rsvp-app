@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Rubik, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-
+import Footer from "@/components/layout/footer";
 const geistSans = Rubik({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -24,10 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="bg-black">
         {children}
+        <Footer />
       </body>
     </html>
   );
