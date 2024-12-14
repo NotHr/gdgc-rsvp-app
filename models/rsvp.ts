@@ -19,8 +19,7 @@ const rsvpSchema: Schema<IRsvp> = new Schema(
       type: String,
       enum: ["accepted", "declined", "pending"],
       default: "pending",
-    },
-    createdAt: { type: Date, default: Date.now },
+    }
   },
   {
     timestamps: true,

@@ -21,8 +21,7 @@ const userSchema: Schema<IUser> = new Schema(
       type: String,
       enum: ["student", "admin", "faculty"],
       default: "student",
-    },
-    createdAt: { type: Date, default: Date.now },
+    }
   },
   {
     timestamps: true,
