@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IEvent extends Document {
   title: string;
   description: string;
+  catageory: "sports" | "tech" | "cultural" | "misc" | "unlisted";
   date: Date;
   location: string;
   organizer: mongoose.Types.ObjectId;
@@ -14,13 +15,18 @@ const eventSchema: Schema<IEvent> = new Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
+    catageory: {
+      type: String,
+      enum: ["sports", "tech", "cultural", "misc", "unlisted"],
+      default: "unlisted",
+    },
     date: { type: Date, required: true },
     location: { type: String, required: true },
     organizer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }
+    },
   },
   {
     timestamps: true,
