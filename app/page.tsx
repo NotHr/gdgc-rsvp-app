@@ -1,7 +1,6 @@
 "use client";
-import testImage from "@/public/test-carousel.jpg";
-
-import { useState } from "react";
+import testCarsonal from "@/public/test-carousel.jpg";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,36 +40,39 @@ const featuredEvents: FeaturedEvent[] = [
 
 export default function EventsPage() {
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
-  const [events, setEvents] = useState<IEvent[]>([
-    {
-      _id: "63c1f20e1c4a4e1c9f4e3d2b",
-      title: "Full-stack Development Workshop",
-      description:
-        "Learn how to build full-stack applications using modern technologies",
-      date: new Date("2024-12-25T10:00:00Z"),
-      location: "Shivaji auditorium",
-      organizer: "63c1f20e1c4a4e1c9f4e3d2a",
-    },
-    {
-      _id: "63c1f20e1c4a4e1c9f4e3d2e",
-      title: "React Basics Workshop",
-      description: "Introduction to React.js for beginners",
-      date: new Date("2024-12-30T14:00:00Z"),
-      location: "Kinnera hall",
-      organizer: "63c1f20e1c4a4e1c9f4e3d2f",
-    },
-  ]);
+  const [events, setEvents] = useState<IEvent[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch("/api/events");
+        const data = await response.json();
+        setEvents(data.events);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  if (loading) {
+    return <div>Loading events...</div>;
+  }
 
   const nextEvent = () => {
     setCurrentEventIndex(
-      (prevIndex) => (prevIndex + 1) % featuredEvents.length
+      (prevIndex) => (prevIndex + 1) % featuredEvents.length,
     );
   };
 
   const prevEvent = () => {
     setCurrentEventIndex(
       (prevIndex) =>
-        (prevIndex - 1 + featuredEvents.length) % featuredEvents.length
+        (prevIndex - 1 + featuredEvents.length) % featuredEvents.length,
     );
   };
 
@@ -85,7 +87,7 @@ export default function EventsPage() {
         <div className="flex flex-col gap-2">
           <div className="relative w-full  h-[200px] rounded-lg overflow-hidden">
             <Image
-              src={testImage}
+              src={testCarsonal}
               alt="testing"
               fill
               className="object-cover"
@@ -162,9 +164,11 @@ export default function EventsPage() {
 
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">All events</h2>
-        {events.map((event, index) => (
-          <EventCard key={index} event={event} />
-        ))}
+        {events.length ? (
+          events.map((event, index) => <EventCard key={index} event={event} />)
+        ) : (
+          <div className="justify-center">No events available.</div>
+        )}
       </div>
     </div>
   );

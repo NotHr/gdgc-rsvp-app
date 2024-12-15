@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Rubik, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/layout/footer";
-const geistSans = Rubik({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Roboto_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
