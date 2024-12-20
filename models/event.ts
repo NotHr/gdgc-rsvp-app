@@ -7,7 +7,6 @@ export interface IEvent extends Document {
   date: Date;
   location: string;
   organizer: mongoose.Types.ObjectId;
-  createdAt: Date;
 }
 
 const eventSchema: Schema<IEvent> = new Schema(
@@ -29,7 +28,7 @@ const eventSchema: Schema<IEvent> = new Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 const Event =
