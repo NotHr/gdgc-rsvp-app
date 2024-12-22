@@ -65,14 +65,14 @@ export default function EventsPage() {
 
   const nextEvent = () => {
     setCurrentEventIndex(
-      (prevIndex) => (prevIndex + 1) % featuredEvents.length,
+      (prevIndex) => (prevIndex + 1) % featuredEvents.length
     );
   };
 
   const prevEvent = () => {
     setCurrentEventIndex(
       (prevIndex) =>
-        (prevIndex - 1 + featuredEvents.length) % featuredEvents.length,
+        (prevIndex - 1 + featuredEvents.length) % featuredEvents.length
     );
   };
 
@@ -118,7 +118,7 @@ export default function EventsPage() {
 
       {/* dots under photos */}
       <div className="flex justify-center gap-2 mb-4">
-        {featuredEvents.map((_, index) => (
+        {featuredEvents?.map((_, index) => (
           <button
             key={index}
             className={`w-2 h-2 rounded-full ${
@@ -164,8 +164,8 @@ export default function EventsPage() {
 
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">All events</h2>
-        {events.length ? (
-          events.map((event, index) => <EventCard key={index} event={event} />)
+        {events?.length ? (
+          events?.map((event, index) => <EventCard key={index} event={event} />)
         ) : (
           <div className="justify-center">No events available.</div>
         )}
