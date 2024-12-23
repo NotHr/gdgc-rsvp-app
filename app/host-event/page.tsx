@@ -15,6 +15,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 // Constants
+type FieldValue = string | File | null;
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
@@ -51,11 +53,11 @@ const eventSchema = z.object({
     .instanceof(File)
     .refine(
       (file) => file.size <= MAX_FILE_SIZE,
-      "File size must be less than 5MB",
+      "File size must be less than 5MB"
     )
     .refine(
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-      "Only .jpg, .png, and .webp files are accepted",
+      "Only .jpg, .png, and .webp files are accepted"
     ),
 });
 
@@ -85,7 +87,7 @@ export default function HostEventForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateField = (field: keyof FormData, value: any) => {
+  const validateField = (field: keyof FormData, value: FieldValue) => {
     try {
       eventSchema.shape[field].parse(value);
       setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -100,7 +102,7 @@ export default function HostEventForm() {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));

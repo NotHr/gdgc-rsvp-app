@@ -1,8 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 
+interface IUser {
+  name: string;
+  email: string;
+  phone?: string;
+  profilePic?: string;
+  role: "student" | "admin" | "faculty";
+  createdAt: Date;
+}
+
 export default function Profile() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<IUser | null>(null); // Updated to IUser | null
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -22,8 +31,8 @@ export default function Profile() {
 
         const data = await response.json();
         setUser(data.data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError((err as Error).message);
       } finally {
         setLoading(false);
       }
