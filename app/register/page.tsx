@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +23,6 @@ import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -89,10 +87,12 @@ export default function RegistrationPage() {
         variant: "success",
       });
       router.push("/login");
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Something went wrong.";
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again later.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
