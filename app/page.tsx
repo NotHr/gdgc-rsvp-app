@@ -16,28 +16,6 @@ import Image from "next/image";
 import { IEvent } from "@/models/event";
 import EventCard from "@/components/eventCard";
 
-type FeaturedEvent = {
-  date: string;
-};
-
-const featuredEvents: FeaturedEvent[] = [
-  {
-    date: "10 JUNE",
-  },
-  {
-    date: "15 JULY",
-  },
-  {
-    date: "20 AUGUST",
-  },
-  {
-    date: "5 SEPTEMBER",
-  },
-  {
-    date: "10 OCTOBER",
-  },
-];
-
 export default function EventsPage() {
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [events, setEvents] = useState<IEvent[]>([]);
@@ -48,7 +26,11 @@ export default function EventsPage() {
       try {
         const response = await fetch("/api/events");
         const data = await response.json();
-        setEvents(data.events);
+
+        // Assuming the structure of response is { message, event: [events] }
+        if (data && data.event) {
+          setEvents(data.event); // Access 'event' array from the API response
+        }
       } catch (error) {
         console.error("Error fetching events:", error);
       } finally {
@@ -64,15 +46,12 @@ export default function EventsPage() {
   }
 
   const nextEvent = () => {
-    setCurrentEventIndex(
-      (prevIndex) => (prevIndex + 1) % featuredEvents.length
-    );
+    setCurrentEventIndex((prevIndex) => (prevIndex + 1) % events.length);
   };
 
   const prevEvent = () => {
     setCurrentEventIndex(
-      (prevIndex) =>
-        (prevIndex - 1 + featuredEvents.length) % featuredEvents.length
+      (prevIndex) => (prevIndex - 1 + events.length) % events.length,
     );
   };
 
@@ -80,45 +59,49 @@ export default function EventsPage() {
     <div className="min-h-screen bg-[#1a1a1a] text-white p-6 pt-10">
       <div className="flex items-center space-x-4 mb-2">
         <h1 className="text-2xl font-bold text-white">Events</h1>
-        <span className="text-emerald-400 ">Upcoming</span>
+        <span className="text-emerald-400">Upcoming</span>
       </div>
 
-      <Card className="bg-gradient-to-r from-[#151c1c] to-[#33cf95] rounded-xl mb-4 relative ">
-        <div className="flex flex-col gap-2">
-          <div className="relative w-full  h-[200px] rounded-lg overflow-hidden">
-            <Image
-              src={testCarsonal}
-              alt="testing"
-              fill
-              className="object-cover"
-            />
+      {/* Featured Event Carousel */}
+      {events?.length > 0 && (
+        <Card className="bg-gradient-to-r from-[#151c1c] to-[#33cf95] rounded-xl mb-4 relative">
+          <div className="flex flex-col gap-2">
+            <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
+              <Image
+                src={events[currentEventIndex].image || testCarsonal}
+                alt={events[currentEventIndex].title}
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
-        </div>
-        <div className="absolute top-1/2 left-4 -translate-y-1/2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full bg-black/50 text-white hover:bg-black/70"
-            onClick={prevEvent}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-        </div>
-        <div className="absolute top-1/2 right-4 -translate-y-1/2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full bg-black/50 text-white hover:bg-black/70"
-            onClick={nextEvent}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-        </div>
-      </Card>
 
-      {/* dots under photos */}
+          <div className="absolute top-1/2 left-4 -translate-y-1/2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full bg-black/50 text-white hover:bg-black/70"
+              onClick={prevEvent}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+          </div>
+          <div className="absolute top-1/2 right-4 -translate-y-1/2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full bg-black/50 text-white hover:bg-black/70"
+              onClick={nextEvent}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Dots under photos */}
       <div className="flex justify-center gap-2 mb-4">
-        {featuredEvents?.map((_, index) => (
+        {events?.map((_, index) => (
           <button
             key={index}
             className={`w-2 h-2 rounded-full ${
@@ -129,39 +112,25 @@ export default function EventsPage() {
         ))}
       </div>
 
+      {/* Event Categories */}
       <div className="flex justify-between mb-8 px-4">
-        <div className="flex flex-col items-center gap-2">
-          <div className="p-3 rounded-lg">
-            <Trophy className="w-6 h-6 text-gray-400" />
+        {[
+          { Icon: Trophy, label: "Sports" },
+          { Icon: Music, label: "Cultural" },
+          { Icon: GraduationCap, label: "Education" },
+          { Icon: Palette, label: "Art" },
+          { Icon: Speech, label: "Seminar" },
+        ].map(({ Icon, label }, idx) => (
+          <div key={idx} className="flex flex-col items-center gap-2">
+            <div className="p-3 rounded-lg">
+              <Icon className="w-6 h-6 text-gray-400" />
+            </div>
+            <span className="text-xs text-gray-400">{label}</span>
           </div>
-          <span className="text-xs text-gray-400">Sports</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="p-3 rounded-lg">
-            <Music className="w-6 h-6 text-gray-400" />
-          </div>
-          <span className="text-xs text-gray-400">Cultural</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="p-3 rounded-lg">
-            <GraduationCap className="w-6 h-6 text-gray-400" />
-          </div>
-          <span className="text-xs text-gray-400">Education</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="p-3 rounded-lg">
-            <Palette className="w-6 h-6 text-gray-400" />
-          </div>
-          <span className="text-xs text-gray-400">Art</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="p-3 rounded-lg">
-            <Speech className="w-6 h-6 text-gray-400" />
-          </div>
-          <span className="text-xs text-gray-400">Seminar</span>
-        </div>
+        ))}
       </div>
 
+      {/* All Events Section */}
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">All events</h2>
         {events?.length ? (

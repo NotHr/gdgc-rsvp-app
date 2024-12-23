@@ -1,9 +1,8 @@
 "use client";
-
-import { z } from "zod";
-import { Upload } from "lucide-react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -11,8 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { Upload } from "lucide-react";
+import { z } from "zod";
+import { toast } from "sonner";
+
+// Constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const clubs = [
   { id: 1, name: "GDGC" },
@@ -20,7 +24,7 @@ const clubs = [
   { id: 3, name: "Kalakriti" },
   { id: 4, name: "Cogaan" },
   { id: 5, name: "G-electra" },
-];
+] as const;
 
 const categories = [
   { id: 1, name: "Sports" },
@@ -28,23 +32,46 @@ const categories = [
   { id: 3, name: "Cultural" },
   { id: 4, name: "Art" },
   { id: 5, name: "Unlisted" },
-];
+] as const;
 
+// Enhanced form schema with better validation
 const eventSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  date: z.string().min(1, "Date is required"),
+  date: z.string().refine((date) => {
+    const selectedDate = new Date(date);
+    const today = new Date();
+    return selectedDate >= today;
+  }, "Event date cannot be in the past"),
   time: z.string().min(1, "Time is required"),
-  location: z.string().min(1, "Location is required"),
+  location: z.string().min(3, "Location must be at least 3 characters"),
   organizer: z.string().min(1, "Organizer is required"),
   category: z.string().min(1, "Category is required"),
-  eventPoster: z.any().refine((file) => file instanceof File, {
-    message: "Event poster is required",
-  }),
+  eventPoster: z
+    .instanceof(File)
+    .refine(
+      (file) => file.size <= MAX_FILE_SIZE,
+      "File size must be less than 5MB",
+    )
+    .refine(
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+      "Only .jpg, .png, and .webp files are accepted",
+    ),
 });
 
+type FormData = {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  organizer: string;
+  category: string;
+  eventPoster: File | null;
+};
+
 export default function HostEventForm() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
     date: "",
@@ -52,45 +79,121 @@ export default function HostEventForm() {
     location: "",
     organizer: "",
     category: "",
-    eventPoster: null as File | null,
+    eventPoster: null,
   });
-
-  const [posterPreview, setPosterPreview] = useState("");
+  const [posterPreview, setPosterPreview] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateField = (field: keyof FormData, value: any) => {
+    try {
+      eventSchema.shape[field].parse(value);
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setErrors((prev) => ({
+          ...prev,
+          [field]: error.errors[0]?.message || "Invalid input",
+        }));
+      }
+    }
+  };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+    validateField(id as keyof FormData, value);
   };
 
   const handleSelectChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    validateField(key as keyof FormData, value);
   };
 
   const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setPosterPreview(previewUrl);
-      setFormData((prev) => ({ ...prev, eventPoster: file }));
+      // Clean up previous preview URL
+      if (posterPreview) {
+        URL.revokeObjectURL(posterPreview);
+      }
+
+      try {
+        eventSchema.shape.eventPoster.parse(file);
+        const previewUrl = URL.createObjectURL(file);
+        setPosterPreview(previewUrl);
+        setFormData((prev) => ({ ...prev, eventPoster: file }));
+        setErrors((prev) => ({ ...prev, eventPoster: "" }));
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setErrors((prev) => ({
+            ...prev,
+            eventPoster: error.errors[0]?.message || "Invalid file",
+          }));
+        }
+      }
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
+      setIsSubmitting(true);
+
+      // Validate all form data
       eventSchema.parse(formData);
-      console.log("Submitted data:", formData);
-      setErrors({});
-    } catch (err: any) {
-      const fieldErrors: Record<string, string> = {};
-      if (err.errors) {
-        err.errors.forEach((error: any) => {
-          fieldErrors[error.path[0]] = error.message;
-        });
+
+      const fd = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null) {
+          fd.append(key, value);
+        }
+      });
+
+      const response = await fetch("/api/events", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create event");
       }
-      setErrors(fieldErrors);
+
+      toast.success("Event created successfully!");
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        date: "",
+        time: "",
+        location: "",
+        organizer: "",
+        category: "",
+        eventPoster: null,
+      });
+      setPosterPreview("");
+      setErrors({});
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path) {
+            newErrors[err.path[0]] = err.message;
+          }
+        });
+        setErrors(newErrors);
+        toast.error("Please fix the form errors");
+      } else if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unexpected error occurred");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,6 +202,7 @@ export default function HostEventForm() {
       <div className="max-w-2xl mx-auto space-y-8">
         <h1 className="text-2xl font-semibold">Host Event</h1>
         <div className="space-y-6">
+          {/* Title */}
           <div className="space-y-2">
             <label htmlFor="title" className="block text-lg">
               Title
@@ -115,6 +219,7 @@ export default function HostEventForm() {
             )}
           </div>
 
+          {/* Description */}
           <div className="space-y-2">
             <label htmlFor="description" className="block text-lg">
               Description
@@ -131,6 +236,7 @@ export default function HostEventForm() {
             )}
           </div>
 
+          {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label htmlFor="date" className="block text-lg">
@@ -164,6 +270,7 @@ export default function HostEventForm() {
             </div>
           </div>
 
+          {/* Location */}
           <div className="space-y-2">
             <label htmlFor="location" className="block text-lg">
               Location
@@ -180,7 +287,9 @@ export default function HostEventForm() {
             )}
           </div>
 
+          {/* Club and Category */}
           <div className="grid grid-cols-2 gap-4">
+            {/* Club */}
             <div className="space-y-2">
               <label className="block text-lg">Club</label>
               <Select
@@ -204,6 +313,7 @@ export default function HostEventForm() {
               )}
             </div>
 
+            {/* Category */}
             <div className="space-y-2">
               <label className="block text-lg">Category</label>
               <Select
@@ -226,6 +336,7 @@ export default function HostEventForm() {
             </div>
           </div>
 
+          {/* Event Poster */}
           <div className="space-y-2">
             <label className="block text-lg">Event Poster</label>
             <div
@@ -249,14 +360,19 @@ export default function HostEventForm() {
               className="hidden"
               onChange={handlePosterChange}
             />
+            {errors.eventPoster && (
+              <p className="text-red-500 text-sm">{errors.eventPoster}</p>
+            )}
           </div>
 
+          {/* Submit Button */}
           <Button
             variant="default"
             className="bg-[#33cf96] w-full py-3 text-black font-semibold"
             onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            Host Event
+            {isSubmitting ? "Hosting..." : "Host Event"}
           </Button>
         </div>
       </div>

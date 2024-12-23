@@ -6,7 +6,7 @@ export interface IEvent extends Document {
   catageory: "sports" | "all" | "cultural" | "educational" | "art" | "unlisted";
   date: Date;
   location: string;
-  organizer: mongoose.Types.ObjectId;
+  organizer: string;
 }
 
 const eventSchema: Schema<IEvent> = new Schema(
@@ -21,14 +21,13 @@ const eventSchema: Schema<IEvent> = new Schema(
     date: { type: Date, required: true },
     location: { type: String, required: true },
     organizer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Event =
