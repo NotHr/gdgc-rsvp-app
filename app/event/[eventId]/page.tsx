@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { IEvent } from "@/models/event";
 import { toast } from "sonner";
 import * as jwt_decode from "jwt-decode"; // JWT decoder
+import { getTokenData } from "@/lib/getTokenData";
 
 export default function EventPage() {
   const router = useRouter();
@@ -37,30 +38,9 @@ export default function EventPage() {
     fetchEvent();
   }, []);
 
-  // Helper function to get the user ID from JWT token
-  const getUserIdFromToken = () => {
-    try {
-      const token = localStorage.getItem("token"); // Replace with where your JWT is stored (e.g., cookies)
-      if (!token) {
-        throw new Error("No token found");
-      }
-      const decoded: any = jwt_decode(token); // Decode the JWT to extract user ID
-      return decoded.userId;
-    } catch (error) {
-      console.error("Error decoding JWT:", error);
-      return null;
-    }
-  };
-
   // Handle RSVP action
   const handleRsvp = async () => {
     if (!event) return;
-
-    const userId = getUserIdFromToken();
-    if (!userId) {
-      toast.error("You must be logged in to RSVP.");
-      return;
-    }
 
     try {
       const response = await fetch(`/api/events/rsvp`, {
@@ -68,7 +48,7 @@ export default function EventPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ eventId: event._id, userId }),
+        body: JSON.stringify({ eventId: event._id }),
       });
 
       const { message } = await response.json();
